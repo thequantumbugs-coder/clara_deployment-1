@@ -1,0 +1,5 @@
+# College Knowledge Base
+
+<!-- Add your college information here -->
+<!-- This file will be chunked and ingested into ChromaDB -->
+<!-- Format: Plain text with information about admissions, fees, departments, courses, etc. -->

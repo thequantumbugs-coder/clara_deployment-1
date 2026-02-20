@@ -1,6 +1,7 @@
 #!/bin/bash
 # Run CLARA backend (API + WebSocket at http://localhost:8000).
 # Frontend: cd frontend && npm install && npm run dev → http://localhost:5173
+set -e
 cd "$(dirname "$0")"
 if [ ! -d .venv ]; then
   echo "Creating virtualenv..."

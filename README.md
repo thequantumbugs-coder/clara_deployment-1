@@ -2,6 +2,8 @@
 
 Full-stack application: **React (Vite)** frontend + **FastAPI** backend with WebSocket for the CLARA AI receptionist kiosk.
 
+**Repository:** [FB-Clara](https://github.com/thequantumbugs-coder/FB-Clara)
+
 ## Repository structure
 
 ```
@@ -17,6 +19,15 @@ Full-stack application: **React (Vite)** frontend + **FastAPI** backend with Web
 
 - **Node.js** 20+ (for frontend)
 - **Python** 3.8+ (for backend)
+
+## Clone and setup
+
+```bash
+git clone https://github.com/thequantumbugs-coder/FB-Clara.git
+cd FB-Clara
+```
+
+Then run with one of the options below. On systems without Node in `PATH`, you can extract a Node binary into `.node/` (see frontend README); `run-both.sh` will use `.node/bin` if present.
 
 ## Quick start
 
@@ -57,6 +68,11 @@ cd frontend && npm install && npm run dev
 | Frontend | React 19, Vite 6, TypeScript, Tailwind CSS, Motion |
 | Backend  | FastAPI, Uvicorn, WebSockets |
 | Protocol | WebSocket at `ws://localhost:8000/ws/clara` (state + payload) |
+
+## Development
+
+- Backend: `backend/main.py` (FastAPI), `backend/config.py` (env from `.env`).
+- Frontend: `frontend/` (Vite + React); WebSocket URL in `frontend/src/App.tsx` (`ws://localhost:8000/ws/clara`).
 
 ## License
 

@@ -1,6 +1,12 @@
 #!/bin/bash
 # Start backend in background, then frontend. Open http://localhost:5173 for the UI.
-cd "$(dirname "$0")"
+set -e
+ROOT="$(cd "$(dirname "$0")" && pwd)"
+cd "$ROOT"
+# Use project Node if present (no system npm required)
+if [ -d "$ROOT/.node/bin" ]; then
+  export PATH="$ROOT/.node/bin:$PATH"
+fi
 if [ ! -d .venv ]; then
   echo "Creating virtualenv..."
   python3 -m venv .venv

@@ -69,6 +69,16 @@ cd frontend && npm install && npm run dev
 | Backend  | FastAPI, Uvicorn, WebSockets |
 | Protocol | WebSocket at `ws://localhost:8000/ws/clara` (state + payload) |
 
+## Pushing to GitHub (FB-Clara)
+
+This repo is set up to push to **https://github.com/thequantumbugs-coder/FB-Clara**. From the project root:
+
+```bash
+./push-to-fb-clara.sh
+```
+
+If Git prompts for credentials, use your GitHub username and a [Personal Access Token](https://github.com/settings/tokens) (scope `repo`). Or use SSH: `git remote set-url fb-clara git@github.com:thequantumbugs-coder/FB-Clara.git` then run the script again.
+
 ## Development
 
 - Backend: `backend/main.py` (FastAPI), `backend/config.py` (env from `.env`).

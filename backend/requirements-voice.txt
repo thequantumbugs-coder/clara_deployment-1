@@ -1,0 +1,8 @@
+# Voice integration only (no opencv/whisper/chromadb). Use requirements.txt for full stack.
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+websockets>=12.0
+pydantic>=2.5.0
+python-dotenv>=1.0.0
+groq>=0.4.0
+sarvamai>=0.1.26a2

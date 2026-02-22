@@ -9,8 +9,18 @@ import LanguageSelect from './components/LanguageSelect';
 import ChatScreen from './components/ChatScreen';
 import type { ChatMessage } from './types/chat';
 
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:6969/ws/clara';
+const BACKEND_URL = (() => {
+  try {
+    const u = new URL(WS_URL.replace(/^ws/, 'http'));
+    return `${u.origin}`;
+  } catch {
+    return 'http://localhost:6969';
+  }
+})();
+
 export default function App() {
-  const { state, payload, setManualState, sendMessage } = useWebSocket('ws://localhost:8000/ws/clara');
+  const { state, payload, isConnected, hasAttemptedConnect, setManualState, sendMessage, retryConnect } = useWebSocket(WS_URL);
   const [urlOverrideState, setUrlOverrideState] = React.useState<number | null>(null);
 
   // E2E / test: ?state=5 opens chat directly; sticky so WS cannot overwrite
@@ -61,8 +71,8 @@ export default function App() {
         return (
           <motion.div key="lang" className="w-full h-full">
             <LanguageSelect 
-              onSelect={() => {
-                sendMessage({ action: 'language_selected' });
+              onSelect={(language) => {
+                sendMessage({ action: 'language_selected', language });
                 setUrlOverrideState(null);
                 setManualState(5); // Transition to chat (voice) — post-language flow
               }} 
@@ -78,6 +88,8 @@ export default function App() {
               isListening={payload?.isListening ?? false}
               isSpeaking={payload?.isSpeaking ?? false}
               isProcessing={payload?.isProcessing ?? false}
+              payload={payload}
+              isConnected={isConnected}
               onBack={() => setEffectiveState(3)}
               onOrbTap={() => sendMessage({ action: 'toggle_mic' })}
               sendMessage={sendMessage}
@@ -112,6 +124,19 @@ export default function App() {
   return (
     <LanguageProvider>
       <div className="relative w-full h-full bg-stone-950 overflow-hidden">
+        {/* Connection banner when backend is unreachable */}
+        {hasAttemptedConnect && !isConnected && (
+          <div className="absolute top-0 left-0 right-0 z-30 px-4 py-3 bg-amber-500/20 border-b border-amber-500/40 rounded-b-lg text-center text-amber-200 text-sm flex flex-col items-center justify-center gap-1">
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <span>Cannot connect to backend at <a href={BACKEND_URL} target="_blank" rel="noopener noreferrer" className="underline">{BACKEND_URL}</a>.</span>
+              <button type="button" onClick={retryConnect} className="px-3 py-1 rounded bg-amber-500/40 hover:bg-amber-500/60 text-amber-100 font-medium">Retry</button>
+              <span className="text-amber-200/80">or refresh the page.</span>
+            </div>
+            <div className="text-amber-200/80 text-xs mt-1">
+              Start backend from project root: <code className="bg-black/20 px-1 rounded">.\start-backend.ps1</code> or <code className="bg-black/20 px-1 rounded">.\.venv\Scripts\python backend\main.py</code>. Check <a href={`${BACKEND_URL}/health`} target="_blank" rel="noopener noreferrer" className="underline">/health</a>. If you changed frontend/.env.local, restart the frontend (npm run dev).
+            </div>
+          </div>
+        )}
         {/* Global Warm Glow */}
         <div className="absolute inset-0 warm-glow pointer-events-none z-0" />
         
@@ -128,7 +153,7 @@ export default function App() {
         {/* Debug Indicator (Hidden in production) */}
         {process.env.NODE_ENV === 'development' && (
           <div className="absolute bottom-4 right-4 text-[8px] text-stone-800 uppercase tracking-widest pointer-events-none">
-            Kiosk Mode Active • State: {effectiveState} • WS: Connected
+            Kiosk Mode Active • State: {effectiveState} • WS: {isConnected ? 'Connected' : 'Disconnected'}
           </div>
         )}
       </div>

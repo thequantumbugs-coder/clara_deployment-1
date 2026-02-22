@@ -11,12 +11,12 @@ const LANGUAGES: { name: Language; label: string }[] = [
   { name: 'Malayalam', label: 'മലയാളം' },
 ];
 
-export default function LanguageSelect({ onSelect }: { onSelect: () => void }) {
+export default function LanguageSelect({ onSelect }: { onSelect: (language: Language) => void }) {
   const { setLanguage, t } = useLanguage();
 
   const handleSelect = (lang: Language) => {
     setLanguage(lang);
-    onSelect();
+    onSelect(lang);
   };
 
   return (

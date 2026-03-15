@@ -22,6 +22,7 @@ from config import (
     HOST,
     PORT,
     FRONTEND_URL,
+    LOG_LEVEL,
     RAG_MODEL,
     RAG_TOP_K,
     SARVAM_API_KEY,
@@ -33,6 +34,14 @@ from rag import get_collection, get_relevant_context
 from core.audio_pipeline import record_audio
 from stt import wav_to_transcript
 
+# ---------------------------------------------------------------------------
+# Structured logging setup
+# ---------------------------------------------------------------------------
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%S%z",
+)
 logger = logging.getLogger(__name__)
 
 
@@ -166,7 +175,12 @@ async def process_user_text_and_reply(session: dict, text: str, websocket: WebSo
 
 @asynccontextmanager
 async def lifespan(app: object):
-    """Startup: log RAG collection document count. Shutdown: nothing."""
+    """Startup: validate config, log RAG collection document count. Shutdown: nothing."""
+    # Warn about missing API keys at startup
+    if not GROQ_API_KEY:
+        logger.warning("GROQ_API_KEY is not set – LLM replies will be unavailable.")
+    if not SARVAM_API_KEY:
+        logger.warning("SARVAM_API_KEY is not set – TTS/STT will be unavailable.")
     try:
         coll = get_collection()
         n = coll.count()
@@ -178,23 +192,31 @@ async def lifespan(app: object):
             logger.info("RAG: college_knowledge has %s documents.", n)
     except Exception as e:
         logger.warning("RAG: could not check collection: %s", e)
+    logger.info("CLARA backend started on %s:%s", HOST, PORT)
     yield
+    logger.info("CLARA backend shutting down.")
 
 
 app = FastAPI(title="CLARA Backend", lifespan=lifespan)
 
+# ---------------------------------------------------------------------------
+# CORS – In production, restrict to FRONTEND_URL only.
+# In development (FRONTEND_URL containing localhost), include dev port range.
+# ---------------------------------------------------------------------------
+_allowed_origins = [FRONTEND_URL]
+if "localhost" in FRONTEND_URL or "127.0.0.1" in FRONTEND_URL:
+    for port in range(5173, 5183):
+        _allowed_origins.append(f"http://localhost:{port}")
+        _allowed_origins.append(f"http://127.0.0.1:{port}")
+    for port in range(8000, 8003):
+        _allowed_origins.append(f"http://localhost:{port}")
+        _allowed_origins.append(f"http://127.0.0.1:{port}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        FRONTEND_URL,
-        "http://localhost:5173", "http://localhost:5174", "http://localhost:5175", "http://localhost:5176", "http://localhost:5177", "http://localhost:5178",
-        "http://localhost:5179", "http://localhost:5180", "http://localhost:5181", "http://localhost:5182",
-        "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175", "http://127.0.0.1:5176", "http://127.0.0.1:5177", "http://127.0.0.1:5178",
-        "http://127.0.0.1:5179", "http://127.0.0.1:5180", "http://127.0.0.1:5181", "http://127.0.0.1:5182",
-        "http://127.0.0.1:8000", "http://localhost:8000", "http://127.0.0.1:8001", "http://localhost:8001", "http://127.0.0.1:8002", "http://localhost:8002",
-    ],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -206,7 +228,22 @@ def root():
 
 @app.get("/health")
 def health():
-    return {"status": "healthy"}
+    """Health check with dependency status for orchestrators and monitoring."""
+    rag_ok = False
+    rag_docs = 0
+    try:
+        coll = get_collection()
+        rag_docs = coll.count()
+        rag_ok = True
+    except Exception:
+        pass
+    return {
+        "status": "healthy",
+        "groq_configured": bool(GROQ_API_KEY),
+        "sarvam_configured": bool(SARVAM_API_KEY),
+        "rag_available": rag_ok,
+        "rag_documents": rag_docs,
+    }
 
 
 VALID_LANGUAGES = frozenset(LANGUAGE_NAME_TO_CODE_KEY.keys())
@@ -349,4 +386,10 @@ if __name__ == "__main__":
     import uvicorn
     logger.info("Groq API key: %s", "loaded" if GROQ_API_KEY else "not set (check .env)")
     logger.info("WebSocket: ws://localhost:%s/ws/clara — frontend VITE_WS_URL must match this", PORT)
-    uvicorn.run(app, host=HOST, port=PORT)
+    uvicorn.run(
+        app,
+        host=HOST,
+        port=PORT,
+        log_level=LOG_LEVEL.lower(),
+        access_log=True,
+    )

@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+.env
+.env.local
+*.log
+chroma_db/
+temp/
+tmp/
+.git/
+.github/
+Dockerfile
+.dockerignore

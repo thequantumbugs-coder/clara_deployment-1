@@ -62,6 +62,7 @@ AUDIO_SILENT_RMS_THRESHOLD = float(os.getenv("AUDIO_SILENT_RMS_THRESHOLD", "0.00
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "6969"))
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
 
 # Language Code Mappings (for TTS target_language_code)
 TARGET_LANGUAGE_CODES = {

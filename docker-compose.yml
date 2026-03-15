@@ -24,7 +24,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_WS_URL: ws://localhost/ws/clara
+        VITE_WS_URL: ${VITE_WS_URL:-ws://localhost/ws/clara}
         VITE_VOICE_INPUT_MODE: browser
     ports:
       - "80:80"
